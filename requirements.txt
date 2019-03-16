@@ -1,5 +1,8 @@
 uvicorn
 starlette
 ujson
+aiosqlite
 databases
+orm
+sqlalchemy
 typesystem
