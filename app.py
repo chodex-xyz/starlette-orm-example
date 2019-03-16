@@ -1,6 +1,7 @@
 import databases
 import orm
 import sqlalchemy
+import typesystem
 
 from starlette.applications import Starlette
 from starlette.config import Config
@@ -8,8 +9,8 @@ from starlette.responses import UJSONResponse
 
 # Configuration from environment variables or '.env' file.
 config = Config(".env")
-DATABASE_URL = config("DATABASE_URL")
 
+DATABASE_URL = config("DATABASE_URL")
 database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
 
@@ -26,6 +27,11 @@ class Note(orm.Model):
     completed = orm.Boolean(default=False)
 
 
+class NoteSchema(typesystem.Schema):
+    text = typesystem.String()
+    completed = typesystem.Boolean()
+
+
 @app.on_event("startup")
 async def startup():
     await database.connect()
@@ -39,7 +45,8 @@ async def shutdown():
 @app.route("/")
 async def index(request):
     notes = await Note.objects.all()
-    return UJSONResponse([dict(note) for note in notes])
+    content = [dict(NoteSchema(dict(note))) for note in notes]
+    return UJSONResponse(content)
 
 
 @app.route("/create")

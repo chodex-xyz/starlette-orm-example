@@ -1,6 +1,7 @@
 uvicorn
 starlette
 ujson
+typesystem
 
 # db
 databases
