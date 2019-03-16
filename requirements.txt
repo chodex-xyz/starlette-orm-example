@@ -1,11 +1,12 @@
 uvicorn
 starlette
 ujson
-aiosqlite
+
+# db
 databases
 orm
 sqlalchemy
-typesystem
+aiosqlite
 
 # Dev
 isort

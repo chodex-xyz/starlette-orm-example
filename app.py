@@ -1,18 +1,48 @@
+import databases
+import orm
+import sqlalchemy
+
 from starlette.applications import Starlette
+from starlette.config import Config
 from starlette.responses import UJSONResponse
 
-from models import Note
+# Configuration from environment variables or '.env' file.
+config = Config(".env")
+DATABASE_URL = config("DATABASE_URL")
 
-app = Starlette(debug=True)
+database = databases.Database(DATABASE_URL)
+metadata = sqlalchemy.MetaData()
+
+app = Starlette(debug=config("DEBUG", default=False))
+
+
+class Note(orm.Model):
+    __tablename__ = "notes"
+    __database__ = database
+    __metadata__ = metadata
+
+    id = orm.Integer(primary_key=True)
+    text = orm.String(max_length=100)
+    completed = orm.Boolean(default=False)
+
+
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 
 @app.route("/")
 async def index(request):
     notes = await Note.objects.all()
-    return UJSONResponse({"notes": [dict(note) for note in notes]})
+    return UJSONResponse([dict(note) for note in notes])
 
 
 @app.route("/create")
 async def create(request):
     note = await Note.objects.create(text="Hello", completed=False)
-    return UJSONResponse({"note": dict(note)})
+    return UJSONResponse(dict(note))
