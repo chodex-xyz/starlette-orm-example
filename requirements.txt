@@ -3,10 +3,9 @@ starlette
 ujson
 
 # db
-databases
+databases[sqlite]
 orm
 sqlalchemy
-aiosqlite
 
 # Dev
 isort
