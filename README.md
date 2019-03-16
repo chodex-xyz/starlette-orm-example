@@ -4,7 +4,6 @@
     ```
     pip3 install -r requirements.txt
     ```
-1. Setup .env
 
 1. create the database
     ```python
@@ -14,6 +13,7 @@
     engine = sqlalchemy.create_engine(str(database.url))
     metadata.create_all(engine)
     ```
+    
 1. Run in a development mode with auto reload
     ```
     uvicorn app:app --reload
