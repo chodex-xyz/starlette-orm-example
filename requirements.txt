@@ -6,3 +6,7 @@ databases
 orm
 sqlalchemy
 typesystem
+
+# Dev
+isort
+black
