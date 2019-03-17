@@ -6,7 +6,6 @@ import typesystem
 from starlette.applications import Starlette
 from starlette.config import Config
 from starlette.responses import UJSONResponse
-from starlette.endpoints import HTTPEndpoint
 from orm.exceptions import NoMatch
 
 # Configuration from environment variables or '.env' file.
@@ -64,3 +63,13 @@ async def note_view(request):
 async def create(request):
     note = await Note.objects.create(text="Hello", completed=False)
     return UJSONResponse(dict(note))
+
+
+@app.exception_handler(404)
+async def not_found(request, exc):
+    return UJSONResponse(content={"error": "not found"}, status_code=exc.status_code)
+
+
+@app.exception_handler(500)
+async def server_error(request, exc):
+    return UJSONResponse(content={"error": "something goes wrong"}, status_code=exc.status_code)
