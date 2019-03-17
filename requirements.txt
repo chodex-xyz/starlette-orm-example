@@ -3,6 +3,7 @@ starlette
 ujson
 typesystem
 sentry-asgi
+graphene
 
 # db
 databases

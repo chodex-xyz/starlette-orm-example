@@ -1,4 +1,5 @@
 import databases
+import graphene
 import orm
 import sentry_sdk
 import sqlalchemy
@@ -8,6 +9,7 @@ from sentry_asgi import SentryMiddleware
 from starlette.applications import Starlette
 from starlette.config import Config
 from starlette.endpoints import HTTPEndpoint
+from starlette.graphql import GraphQLApp
 from starlette.responses import UJSONResponse
 
 # Configuration from environment variables or '.env' file.
@@ -48,7 +50,14 @@ async def shutdown():
     await database.disconnect()
 
 
-@app.route("/")
+class Query(graphene.ObjectType):
+    hello = graphene.String(name=graphene.String(default_value="stranger"))
+
+    def resolve_hello(self, info, name):
+        return "Hello " + name
+
+
+@app.route("/notes")
 async def index(request):
     notes = await Note.objects.all()
     content = [dict(NoteSchema(dict(note))) for note in notes]
@@ -72,7 +81,7 @@ class NoteEndpoint(HTTPEndpoint):
         try:
             note = await Note.objects.get(id=request.path_params.get("id"))
             await note.delete()
-            return UJSONResponse({'success': True})
+            return UJSONResponse({"success": True})
         except NoMatch:
             return UJSONResponse({"error": "not found"}, status_code=404)
 
@@ -92,3 +101,6 @@ async def server_error(request, exc):
     return UJSONResponse(
         content={"error": "something goes wrong"}, status_code=exc.status_code
     )
+
+
+app.add_route("/", GraphQLApp(schema=graphene.Schema(query=Query)))
