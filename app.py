@@ -6,6 +6,8 @@ import typesystem
 from starlette.applications import Starlette
 from starlette.config import Config
 from starlette.responses import UJSONResponse
+from starlette.endpoints import HTTPEndpoint
+from orm.exceptions import NoMatch
 
 # Configuration from environment variables or '.env' file.
 config = Config(".env")
@@ -47,6 +49,15 @@ async def index(request):
     notes = await Note.objects.all()
     content = [dict(NoteSchema(dict(note))) for note in notes]
     return UJSONResponse(content)
+
+
+@app.route("/note/{id}")
+async def note_view(request):
+    try:
+        note = await Note.objects.get(id=request.path_params.get("id"))
+        return UJSONResponse(dict(NoteSchema(note)))
+    except NoMatch:
+        return UJSONResponse({"error": "not found"}, status_code=404)
 
 
 @app.route("/create")
