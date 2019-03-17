@@ -50,8 +50,8 @@ async def index(request):
     return UJSONResponse(content)
 
 
-@app.route("/note/{id}")
-async def note_view(request):
+@app.route("/note/{id}", methods=['GET'])
+async def note_get(request):
     try:
         note = await Note.objects.get(id=request.path_params.get("id"))
         return UJSONResponse(dict(NoteSchema(note)))
@@ -59,8 +59,8 @@ async def note_view(request):
         return UJSONResponse({"error": "not found"}, status_code=404)
 
 
-@app.route("/create")
-async def create(request):
+@app.route("/note/", methods=['POST'])
+async def note_post(request):
     note = await Note.objects.create(text="Hello", completed=False)
     return UJSONResponse(dict(note))
 
