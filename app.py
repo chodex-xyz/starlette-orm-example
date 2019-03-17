@@ -1,12 +1,13 @@
 import databases
 import orm
+import sentry_sdk
 import sqlalchemy
 import typesystem
-
+from orm.exceptions import NoMatch
+from sentry_asgi import SentryMiddleware
 from starlette.applications import Starlette
 from starlette.config import Config
 from starlette.responses import UJSONResponse
-from orm.exceptions import NoMatch
 
 # Configuration from environment variables or '.env' file.
 config = Config(".env")
@@ -15,7 +16,10 @@ DATABASE_URL = config("DATABASE_URL")
 database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
 
+sentry_sdk.init(dsn=config("SENTRY_DSN"))
+
 app = Starlette(debug=config("DEBUG", default=False))
+app.add_middleware(SentryMiddleware)
 
 
 class Note(orm.Model):
@@ -50,7 +54,7 @@ async def index(request):
     return UJSONResponse(content)
 
 
-@app.route("/note/{id}", methods=['GET'])
+@app.route("/note/{id}", methods=["GET"])
 async def note_get(request):
     try:
         note = await Note.objects.get(id=request.path_params.get("id"))
@@ -59,10 +63,15 @@ async def note_get(request):
         return UJSONResponse({"error": "not found"}, status_code=404)
 
 
-@app.route("/note/", methods=['POST'])
+@app.route("/note/", methods=["POST"])
 async def note_post(request):
     note = await Note.objects.create(text="Hello", completed=False)
     return UJSONResponse(dict(note))
+
+
+@app.route("/sentry/")
+def homepage(request):
+    raise ValueError("nope")
 
 
 @app.exception_handler(404)
@@ -72,4 +81,6 @@ async def not_found(request, exc):
 
 @app.exception_handler(500)
 async def server_error(request, exc):
-    return UJSONResponse(content={"error": "something goes wrong"}, status_code=exc.status_code)
+    return UJSONResponse(
+        content={"error": "something goes wrong"}, status_code=exc.status_code
+    )

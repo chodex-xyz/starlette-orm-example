@@ -2,6 +2,7 @@ uvicorn
 starlette
 ujson
 typesystem
+sentry-asgi
 
 # db
 databases
