@@ -7,6 +7,7 @@ from orm.exceptions import NoMatch
 from sentry_asgi import SentryMiddleware
 from starlette.applications import Starlette
 from starlette.config import Config
+from starlette.endpoints import HTTPEndpoint
 from starlette.responses import UJSONResponse
 
 # Configuration from environment variables or '.env' file.
@@ -54,19 +55,26 @@ async def index(request):
     return UJSONResponse(content)
 
 
-@app.route("/note/{id}", methods=["GET"])
-async def note_get(request):
-    try:
-        note = await Note.objects.get(id=request.path_params.get("id"))
-        return UJSONResponse(dict(NoteSchema(note)))
-    except NoMatch:
-        return UJSONResponse({"error": "not found"}, status_code=404)
+@app.route("/note/{id}")
+class NoteEndpoint(HTTPEndpoint):
+    async def get(self, request):
+        try:
+            note = await Note.objects.get(id=request.path_params.get("id"))
+            return UJSONResponse(dict(NoteSchema(note)))
+        except NoMatch:
+            return UJSONResponse({"error": "not found"}, status_code=404)
 
+    async def post(self, request):
+        note = await Note.objects.create(text="Hello", completed=False)
+        return UJSONResponse(dict(note))
 
-@app.route("/note/", methods=["POST"])
-async def note_post(request):
-    note = await Note.objects.create(text="Hello", completed=False)
-    return UJSONResponse(dict(note))
+    async def delete(self, request):
+        try:
+            note = await Note.objects.get(id=request.path_params.get("id"))
+            await note.delete()
+            return UJSONResponse({'success': True})
+        except NoMatch:
+            return UJSONResponse({"error": "not found"}, status_code=404)
 
 
 @app.route("/sentry/")
